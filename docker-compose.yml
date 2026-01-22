@@ -2,10 +2,6 @@ services:
   elasticsearch01:
     image: docker.elastic.co/elasticsearch/elasticsearch:${ES_LOCAL_VERSION}
     container_name: ${ES_LOCAL_CONTAINER_NAME_NODE01}
-    networks:
-      default:
-        aliases:
-          - elasticsearch
     volumes:
       - dev-elasticsearch_01:/usr/share/elasticsearch/data
     ports:
@@ -36,6 +32,10 @@ services:
       interval: 10s
       timeout: 10s
       retries: 30
+    networks:
+      observability:
+        aliases:
+          - elasticsearch
   elasticsearch02:
     image: docker.elastic.co/elasticsearch/elasticsearch:${ES_LOCAL_VERSION}
     container_name: ${ES_LOCAL_CONTAINER_NAME_NODE02}
@@ -69,6 +69,9 @@ services:
       interval: 10s
       timeout: 10s
       retries: 30
+    networks:
+      - observability 
+
   elasticsearch03:
     image: docker.elastic.co/elasticsearch/elasticsearch:${ES_LOCAL_VERSION}
     container_name: ${ES_LOCAL_CONTAINER_NAME_NODE03}
@@ -102,6 +105,9 @@ services:
       interval: 10s
       timeout: 10s
       retries: 30
+    networks:
+      - observability
+
   logstash:
     depends_on:
       elasticsearch01:
@@ -126,6 +132,9 @@ services:
       interval: 10s
       timeout: 10s
       retries: 30
+    networks:
+      - observability
+
   kibana:
     depends_on:
       elasticsearch01:
@@ -152,6 +161,14 @@ services:
       interval: 10s
       timeout: 10s
       retries: 30
+    networks:
+      - observability
+
+networks:
+  observability:
+    ipam:
+      config:
+        - subnet: 192.168.64.0/24
 
 volumes:
   dev-elasticsearch:
