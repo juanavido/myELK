@@ -226,7 +226,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /var/log:/var/log:ro
       - filebeat-data:/usr/share/filebeat/data
-    command: filebeat -e -strict.perms=false
+    command: filebeat -e --strict.perms=false
     networks:
       - observability
 
@@ -250,7 +250,7 @@ services:
       - /proc:/hostfs/proc:ro
       - /:/hostfs:ro
       - metricbeat-data:/usr/share/metricbeat/data
-    command: metricbeat -e -strict.perms=false -system.hostfs=/hostfs
+    command: metricbeat -e --strict.perms=false --system.hostfs=/hostfs
     environment:
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
     networks:

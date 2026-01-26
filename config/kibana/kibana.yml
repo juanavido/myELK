@@ -22,7 +22,9 @@ xpack.reporting.encryptionKey: "${XPACK_REPORTING_ENCRYPTIONKEY}"
 xpack.security.encryptionKey: "${XPACK_SECURITY_ENCRYPTIONKEY}"
 
 # Default solution
-xpack.spaces.defaultSolution: es
+# Nota: Esta opción está disponible en Kibana 9.x.
+# En 8.17 no existe la clave `xpack.spaces.defaultSolution`, así que la deshabilitamos.
+#xpack.spaces.defaultSolution: es
 
 # Telemetry
 telemetry.enabled: false
