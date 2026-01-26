@@ -1,0 +1,35 @@
+# Elasticsearch configuration with TLS/SSL
+# This file is mounted into the container
+
+cluster.name: ${CLUSTER_NAME}
+node.name: ${NODE_NAME}
+
+network.host: 0.0.0.0
+http.port: 9200
+
+# Discovery
+discovery.seed_hosts: ${DISCOVERY_SEED_HOSTS}
+cluster.initial_master_nodes: ${CLUSTER_INITIAL_MASTER_NODES}
+
+# Security - TLS/SSL
+xpack.security.enabled: true
+xpack.security.enrollment.enabled: true
+
+# Transport layer (node-to-node communication)
+xpack.security.transport.ssl.enabled: true
+xpack.security.transport.ssl.verification_mode: certificate
+xpack.security.transport.ssl.certificate_authorities: /usr/share/elasticsearch/config/certs/ca/ca.crt
+xpack.security.transport.ssl.certificate: /usr/share/elasticsearch/config/certs/elasticsearch/elasticsearch.crt
+xpack.security.transport.ssl.key: /usr/share/elasticsearch/config/certs/elasticsearch/elasticsearch.key
+
+# HTTP layer (client communication)
+xpack.security.http.ssl.enabled: true
+xpack.security.http.ssl.certificate_authorities: /usr/share/elasticsearch/config/certs/ca/ca.crt
+xpack.security.http.ssl.certificate: /usr/share/elasticsearch/config/certs/elasticsearch/elasticsearch.crt
+xpack.security.http.ssl.key: /usr/share/elasticsearch/config/certs/elasticsearch/elasticsearch.key
+
+# License
+xpack.license.self_generated.type: trial
+
+# ML
+xpack.ml.use_auto_machine_memory_percent: true

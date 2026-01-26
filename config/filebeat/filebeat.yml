@@ -1,0 +1,48 @@
+filebeat.inputs:
+  # Logs de ejemplo - Puedes agregar más inputs según necesites
+  - type: log
+    enabled: true
+    paths:
+      - /var/log/*.log
+    fields:
+      source: filebeat
+    fields_under_root: true
+
+  # Input para logs de contenedores Docker
+  - type: container
+    enabled: true
+    paths:
+      - /var/lib/docker/containers/*/*.log
+    processors:
+      - add_docker_metadata:
+          host: "unix:///var/run/docker.sock"
+
+# Procesadores globales
+processors:
+  - add_host_metadata:
+      when.not.contains.tags: forwarded
+  - add_cloud_metadata: ~
+  - add_docker_metadata: ~
+
+# Output a Logstash con SSL
+output.logstash:
+  hosts: ["logstash:5044"]
+  loadbalance: true
+  bulk_max_size: 2048
+  ssl.enabled: true
+  ssl.certificate_authorities: ["/usr/share/filebeat/certs/ca/ca.crt"]
+  ssl.certificate: "/usr/share/filebeat/certs/filebeat/filebeat.crt"
+  ssl.key: "/usr/share/filebeat/certs/filebeat/filebeat.key"
+  ssl.verification_mode: "certificate"
+
+# Logging
+logging.level: info
+logging.to_files: true
+logging.files:
+  path: /var/log/filebeat
+  name: filebeat
+  keepfiles: 7
+  permissions: 0640
+
+# Monitoreo interno
+monitoring.enabled: false

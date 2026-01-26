@@ -1,0 +1,28 @@
+# Kibana configuration with TLS/SSL
+
+server.name: kibana
+server.host: "0.0.0.0"
+server.port: 5601
+
+# Elasticsearch connection with SSL
+elasticsearch.hosts: ["https://elasticsearch:9200"]
+elasticsearch.username: "kibana_system"
+elasticsearch.password: "${KIBANA_SYSTEM_PASSWORD}"
+elasticsearch.ssl.certificateAuthorities: ["/usr/share/kibana/config/certs/ca/ca.crt"]
+elasticsearch.ssl.verificationMode: certificate
+
+# Kibana server SSL (optional - for HTTPS access to Kibana)
+server.ssl.enabled: true
+server.ssl.certificate: /usr/share/kibana/config/certs/kibana/kibana.crt
+server.ssl.key: /usr/share/kibana/config/certs/kibana/kibana.key
+
+# Encryption keys
+xpack.encryptedSavedObjects.encryptionKey: "${XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY}"
+xpack.reporting.encryptionKey: "${XPACK_REPORTING_ENCRYPTIONKEY}"
+xpack.security.encryptionKey: "${XPACK_SECURITY_ENCRYPTIONKEY}"
+
+# Default solution
+xpack.spaces.defaultSolution: es
+
+# Telemetry
+telemetry.enabled: false

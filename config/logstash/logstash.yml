@@ -6,3 +6,8 @@ xpack.monitoring.enabled: false
 
 # Align events with ECS by default.
 pipeline.ecs_compatibility: v8
+
+# SSL Configuration for API (optional)
+# api.ssl.enabled: true
+# api.ssl.keystore.path: /usr/share/logstash/config/certs/logstash/logstash.p12
+# api.ssl.keystore.password: changeit
