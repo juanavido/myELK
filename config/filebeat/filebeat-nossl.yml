@@ -24,16 +24,11 @@ processors:
   - add_cloud_metadata: ~
   - add_docker_metadata: ~
 
-# Output a Logstash CON SSL
+# Output a Logstash SIN SSL
 output.logstash:
   hosts: ["logstash:5044"]
   loadbalance: true
   bulk_max_size: 2048
-  ssl.enabled: true
-  ssl.certificate_authorities: ["/usr/share/filebeat/certs/ca/ca.crt"]
-  ssl.certificate: "/usr/share/filebeat/certs/filebeat/filebeat.crt"
-  ssl.key: "/usr/share/filebeat/certs/filebeat/filebeat.key"
-  ssl.verification_mode: "certificate"
 
 # Logging
 logging.level: info

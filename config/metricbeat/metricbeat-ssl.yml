@@ -1,0 +1,124 @@
+metricbeat.config.modules:
+  path: ${path.config}/modules.d/*.yml
+  reload.enabled: false
+
+# Módulos habilitados
+metricbeat.modules:
+  # Métricas del sistema
+  - module: system
+    metricsets:
+      - cpu
+      - load
+      - memory
+      - network
+      - process
+      - process_summary
+      - socket_summary
+      - filesystem
+      - fsstat
+    enabled: true
+    period: 10s
+    processes: ['.*']
+    cpu.metrics: ["percentages", "normalized_percentages"]
+    core.metrics: ["percentages"]
+
+  # Métricas de Docker
+  - module: docker
+    metricsets:
+      - container
+      - cpu
+      - diskio
+      - healthcheck
+      - info
+      - memory
+      - network
+    hosts: ["unix:///var/run/docker.sock"]
+    period: 10s
+    enabled: true
+
+  # Métricas de Elasticsearch con SSL
+  - module: elasticsearch
+    metricsets:
+      - node
+      - node_stats
+      - cluster_stats
+      - index
+      - index_recovery
+      - index_summary
+      - shard
+      - ml_job
+    period: 10s
+    hosts: ["https://elasticsearch:9200"]
+    username: "elastic"
+    password: "${ELASTIC_PASSWORD}"
+    ssl.enabled: true
+    ssl.certificate_authorities: ["/usr/share/metricbeat/certs/ca/ca.crt"]
+    ssl.verification_mode: "certificate"
+    enabled: true
+
+  # Métricas de Logstash
+  - module: logstash
+    metricsets:
+      - node
+      - node_stats
+    period: 10s
+    hosts: ["http://logstash:9600"]
+    enabled: true
+
+  # Métricas de Kibana con SSL
+  - module: kibana
+    metricsets:
+      - stats
+      - status
+    period: 10s
+    hosts: ["https://kibana:5601"]
+    username: "elastic"
+    password: "${ELASTIC_PASSWORD}"
+    ssl.enabled: true
+    ssl.certificate_authorities: ["/usr/share/metricbeat/certs/ca/ca.crt"]
+    ssl.verification_mode: "certificate"
+    enabled: true
+
+# Procesadores
+processors:
+  - add_host_metadata:
+      when.not.contains.tags: forwarded
+  - add_cloud_metadata: ~
+  - add_docker_metadata: ~
+
+# Output directo a Elasticsearch con SSL
+output.elasticsearch:
+  hosts: ["https://elasticsearch:9200"]
+  username: "elastic"
+  password: "${ELASTIC_PASSWORD}"
+  index: "metricbeat-%{[agent.version]}-%{+yyyy.MM.dd}"
+  ssl.enabled: true
+  ssl.certificate_authorities: ["/usr/share/metricbeat/certs/ca/ca.crt"]
+  ssl.verification_mode: "certificate"
+
+# Setup de templates e índices
+setup.template.enabled: true
+setup.template.name: "metricbeat"
+setup.template.pattern: "metricbeat-*"
+setup.ilm.enabled: false
+
+# Kibana para dashboards con SSL
+setup.kibana:
+  host: "https://kibana:5601"
+  username: "elastic"
+  password: "${ELASTIC_PASSWORD}"
+  ssl.enabled: true
+  ssl.certificate_authorities: ["/usr/share/metricbeat/certs/ca/ca.crt"]
+  ssl.verification_mode: "certificate"
+
+# Logging
+logging.level: info
+logging.to_files: true
+logging.files:
+  path: /var/log/metricbeat
+  name: metricbeat
+  keepfiles: 7
+  permissions: 0640
+
+# Monitoreo interno
+monitoring.enabled: false
