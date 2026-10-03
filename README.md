@@ -48,7 +48,8 @@ El `./start-secure.sh` genera certificados si faltan y configura el usuario `kib
 | Elasticsearch (nodo 03) | https://localhost:9203 | `elastic` | `tXrCLc79` |
 | Kibana | https://localhost:5601 | `elastic` | `tXrCLc79` |
 
-Usuario de sistema de Kibana: `kibana_system` / `LuTvybW2` (lo usa Kibana internamente).
+> **Login en Kibana:** usa siempre `elastic` / `tXrCLc79`.
+> `kibana_system` / `LuTvybW2` es una **cuenta de servicio interna** (Kibana↔Elasticsearch) y **NO puede entrar a la UI**: si lo usas verás "You do not have permission to access the requested page".
 
 Ejemplo de consulta autenticada al clúster seguro:
 
