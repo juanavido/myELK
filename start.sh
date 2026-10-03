@@ -20,11 +20,23 @@ if [ "$available_gb" -lt "$required" ]; then
   read -r line
 fi
 
-docker compose up -d --wait
+docker compose up -d --wait elasticsearch01 elasticsearch02 elasticsearch03
+
+# Levantar Kibana, Logstash y Beats
+docker compose up -d --wait kibana logstash filebeat metricbeat
+
+# Configurar Fleet (service token + enrollment token) y levantar Fleet Server + Agent
+if ./setup-fleet.sh; then
+  docker compose up -d fleet-server elastic-agent
+else
+  echo "AVISO: no se pudo configurar Fleet. Ejecuta ./setup-fleet.sh y luego:"
+  echo "  docker compose up -d fleet-server elastic-agent"
+fi
 
 echo
 echo "=== Stack ELK (no seguro) iniciado ==="
 echo "  - Elasticsearch: http://localhost:${ES_LOCAL_PORT_NODE01} (nodo 01)"
 echo "  - Kibana:        http://localhost:${KIBANA_LOCAL_PORT}"
+echo "  - Fleet Server:  http://localhost:8220"
 echo
 echo "Estado del cluster: ./status.sh"

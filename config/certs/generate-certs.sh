@@ -36,6 +36,7 @@ mkdir -p "${CERTS_DIR}/kibana"
 mkdir -p "${CERTS_DIR}/logstash"
 mkdir -p "${CERTS_DIR}/filebeat"
 mkdir -p "${CERTS_DIR}/metricbeat"
+mkdir -p "${CERTS_DIR}/fleet-server"
 
 # Limpiar certificados anteriores (opcional)
 read -p "¿Deseas eliminar certificados existentes? (s/N): " -n 1 -r
@@ -48,6 +49,7 @@ if [[ $REPLY =~ ^[Ss]$ ]]; then
     rm -f "${CERTS_DIR}/logstash"/*.pem "${CERTS_DIR}/logstash"/*.crt "${CERTS_DIR}/logstash"/*.key "${CERTS_DIR}/logstash"/*.p12
     rm -f "${CERTS_DIR}/filebeat"/*.pem "${CERTS_DIR}/filebeat"/*.crt "${CERTS_DIR}/filebeat"/*.key
     rm -f "${CERTS_DIR}/metricbeat"/*.pem "${CERTS_DIR}/metricbeat"/*.crt "${CERTS_DIR}/metricbeat"/*.key
+    rm -f "${CERTS_DIR}/fleet-server"/*.pem "${CERTS_DIR}/fleet-server"/*.crt "${CERTS_DIR}/fleet-server"/*.key
 fi
 
 # =====================================================
@@ -278,6 +280,43 @@ openssl x509 -req \
 echo -e "${GREEN}   ✓ Certificados Metricbeat generados${NC}"
 
 # =====================================================
+# 6b. Generar certificado para Fleet Server
+# =====================================================
+echo -e "${GREEN}[6b] Generando certificados para Fleet Server...${NC}"
+
+cat > "${CERTS_DIR}/fleet-server/fleet-server.ext" << EOF
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = fleet-server
+DNS.2 = fleet-server-local
+DNS.3 = localhost
+IP.1 = 127.0.0.1
+EOF
+
+openssl genrsa -out "${CERTS_DIR}/fleet-server/fleet-server.key" ${KEY_SIZE}
+
+openssl req -new \
+    -key "${CERTS_DIR}/fleet-server/fleet-server.key" \
+    -out "${CERTS_DIR}/fleet-server/fleet-server.csr" \
+    -subj "/C=ES/ST=Madrid/L=Madrid/O=MyOrg/OU=IT/CN=fleet-server"
+
+openssl x509 -req \
+    -in "${CERTS_DIR}/fleet-server/fleet-server.csr" \
+    -CA "${CA_DIR}/ca.crt" \
+    -CAkey "${CA_DIR}/ca.key" \
+    -CAcreateserial \
+    -out "${CERTS_DIR}/fleet-server/fleet-server.crt" \
+    -days ${DAYS_VALID} \
+    -sha256 \
+    -extfile "${CERTS_DIR}/fleet-server/fleet-server.ext"
+
+echo -e "${GREEN}   ✓ Certificados Fleet Server generados${NC}"
+
+# =====================================================
 # 7. Establecer permisos
 # =====================================================
 echo -e "${GREEN}[7/7] Estableciendo permisos...${NC}"
@@ -289,6 +328,7 @@ chmod 600 "${CERTS_DIR}/kibana/kibana.key"
 chmod 600 "${CERTS_DIR}/logstash/logstash.key"
 chmod 600 "${CERTS_DIR}/filebeat/filebeat.key"
 chmod 600 "${CERTS_DIR}/metricbeat/metricbeat.key"
+chmod 600 "${CERTS_DIR}/fleet-server/fleet-server.key"
 
 # Permisos de lectura para certificados
 chmod 644 "${CA_DIR}/ca.crt"
@@ -297,6 +337,7 @@ chmod 644 "${CERTS_DIR}/kibana/kibana.crt"
 chmod 644 "${CERTS_DIR}/logstash/logstash.crt"
 chmod 644 "${CERTS_DIR}/filebeat/filebeat.crt"
 chmod 644 "${CERTS_DIR}/metricbeat/metricbeat.crt"
+chmod 644 "${CERTS_DIR}/fleet-server/fleet-server.crt"
 
 # Limpiar archivos temporales
 rm -f "${CERTS_DIR}"/*/*.csr

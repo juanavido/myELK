@@ -53,9 +53,28 @@ else
     echo -e "${YELLOW}⚠ No se pudo configurar kibana_system automáticamente. Puedes ejecutar ./setup-users.sh manualmente.${NC}"
 fi
 
+# Calcular el fingerprint de la CA antes de arrancar Kibana (lo usa la salida de Fleet)
+echo -e "${GREEN}Calculando fingerprint de la CA...${NC}"
+FPR=$(openssl x509 -fingerprint -sha256 -noout -in "${CERTS_DIR}/ca/ca.crt" | sed 's/.*=//; s/://g' | tr 'A-Z' 'a-z')
+if grep -q '^FLEET_CA_FINGERPRINT=' "${SCRIPT_DIR}/.env"; then
+    sed -i "s|^FLEET_CA_FINGERPRINT=.*|FLEET_CA_FINGERPRINT=${FPR}|" "${SCRIPT_DIR}/.env"
+else
+    echo "FLEET_CA_FINGERPRINT=${FPR}" >> "${SCRIPT_DIR}/.env"
+fi
+
 # Levantar el resto de servicios (Kibana, Logstash, Beats)
 echo -e "${GREEN}Levantando Kibana, Logstash y Beats...${NC}"
 docker compose -f docker-compose-secure.yml up -d kibana logstash filebeat metricbeat
+
+# Configurar Fleet (service token + enrollment token) y levantar Fleet Server + Agent
+echo -e "${GREEN}Configurando Fleet...${NC}"
+if ./setup-fleet.sh; then
+    echo -e "${GREEN}Levantando Fleet Server y Elastic Agent...${NC}"
+    docker compose -f docker-compose-secure.yml up -d fleet-server elastic-agent
+else
+    echo -e "${YELLOW}⚠ No se pudo configurar Fleet automáticamente. Ejecuta ./setup-fleet.sh y luego:${NC}"
+    echo "  docker compose -f docker-compose-secure.yml up -d fleet-server elastic-agent"
+fi
 
 echo ""
 echo -e "${GREEN}=== Stack iniciado ===${NC}"
@@ -66,6 +85,7 @@ echo "  docker compose -f docker-compose-secure.yml logs -f"
 echo ""
 echo "URLs de acceso (una vez que estén listos):"
 echo "  - Elasticsearch: https://localhost:9201 (usuario: elastic)"
-echo "  - Kibana:        https://localhost:5601 (usuario: kibana_system)"
+echo "  - Kibana:        https://localhost:5601 (login: elastic / ELASTIC_PASSWORD)"
+echo "  - Fleet Server:  https://localhost:8220"
 echo ""
 echo -e "${YELLOW}Nota: Los navegadores mostrarán advertencia de certificado autofirmado.${NC}"

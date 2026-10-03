@@ -214,6 +214,65 @@ services:
     networks:
       - observability
 
+  # =====================================================
+  # FLEET SERVER (HTTP, sin TLS)
+  # =====================================================
+  fleet-server:
+    depends_on:
+      kibana:
+        condition: service_healthy
+    image: docker.elastic.co/beats/elastic-agent:${ES_LOCAL_VERSION}
+    container_name: fleet-server
+    hostname: fleet-server
+    restart: unless-stopped
+    ports:
+      - 127.0.0.1:8220:8220
+    volumes:
+      - fleet-server-data:/usr/share/elastic-agent/state
+    environment:
+      - FLEET_SERVER_ENABLE=1
+      - FLEET_SERVER_ELASTICSEARCH_HOST=http://elasticsearch:9200
+      - FLEET_SERVER_SERVICE_TOKEN=${FLEET_SERVER_SERVICE_TOKEN}
+      - FLEET_SERVER_POLICY_ID=fleet-server-policy
+      - FLEET_SERVER_INSECURE_HTTP=1
+      - FLEET_URL=http://fleet-server:8220
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -s http://localhost:8220/api/status | grep -q HEALTHY || exit 1",
+        ]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+    networks:
+      observability:
+        aliases:
+          - fleet-server
+
+  # =====================================================
+  # ELASTIC AGENT (ejemplo, enrolado en Fleet)
+  # =====================================================
+  elastic-agent:
+    depends_on:
+      fleet-server:
+        condition: service_healthy
+    image: docker.elastic.co/beats/elastic-agent:${ES_LOCAL_VERSION}
+    container_name: elastic-agent
+    hostname: elastic-agent
+    restart: unless-stopped
+    user: root
+    volumes:
+      - elastic-agent-data:/usr/share/elastic-agent/state
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - FLEET_ENROLL=1
+      - FLEET_URL=http://fleet-server:8220
+      - FLEET_ENROLLMENT_TOKEN=${FLEET_ENROLLMENT_TOKEN}
+      - FLEET_INSECURE=1
+    networks:
+      - observability
+
 networks:
   observability:
     ipam:
@@ -228,3 +287,5 @@ volumes:
   dev-elasticsearch_03:
   filebeat-data:
   metricbeat-data:
+  fleet-server-data:
+  elastic-agent-data:

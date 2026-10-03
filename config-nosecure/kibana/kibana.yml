@@ -7,3 +7,40 @@ elasticsearch.hosts: ["http://elasticsearch:9200"]
 
 # Telemetry
 telemetry.enabled: false
+
+# =====================================================
+# FLEET (preconfiguración)
+# =====================================================
+xpack.fleet.packages:
+  - name: fleet_server
+    version: latest
+  - name: system
+    version: latest
+xpack.fleet.agentPolicies:
+  - name: Fleet Server Policy
+    id: fleet-server-policy
+    is_default_fleet_server: true
+    has_fleet_server: true
+    package_policies:
+      - name: fleet_server-1
+        package:
+          name: fleet_server
+  - name: Default Agent Policy
+    id: agent-policy-1
+    is_default: true
+    package_policies:
+      - name: system-1
+        package:
+          name: system
+xpack.fleet.fleetServerHosts:
+  - id: default-fleet-server
+    name: Default Fleet Server
+    is_default: true
+    host_urls: ["http://fleet-server:8220"]
+xpack.fleet.outputs:
+  - id: fleet-default-output
+    name: default
+    type: elasticsearch
+    hosts: ["http://elasticsearch:9200"]
+    is_default: true
+    is_default_monitoring: true
