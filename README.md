@@ -66,7 +66,8 @@ curl --cacert ./config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" \
 - start.sh: Inicia el stack (modo sin seguridad).
 - start-secure.sh: Inicia el stack con seguridad (genera certs y configura kibana_system).
 - setup-users.sh: Configura el password de kibana_system (modo seguro).
-- setup-fleet.sh: Genera el service token y el enrollment token de Fleet (ambos modos).
+- setup-fleet.sh: Genera el service token y el enrollment token de Fleet (ambos modos). Idempotente: reutiliza el token si ya es válido.
+- reset-fleet.sh: Reset limpio de Fleet (borra contenedores y volúmenes, rota el token y vuelve a levantar). Úsalo para rotar el token a propósito.
 - stop.sh: Detiene los servicios.
 - uninstall.sh: Elimina contenedores/volúmenes locales (destructivo).
 - status.sh: Verifica el estado del clúster (health, nodos, master, índices).
