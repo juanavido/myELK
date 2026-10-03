@@ -1,0 +1,8 @@
+api.http.host: "0.0.0.0"
+api.http.port: 9600
+
+# Keep this local stack simple; disable Logstash self-monitoring unless you need it.
+xpack.monitoring.enabled: false
+
+# Align events with ECS by default.
+pipeline.ecs_compatibility: v8

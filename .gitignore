@@ -1,0 +1,3 @@
+# Variables de entorno reales (no subir por política de seguridad).
+# Usa las plantillas .env.SECURE / .env.NOSECURE y renómbralas a .env
+.env

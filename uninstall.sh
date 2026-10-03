@@ -23,6 +23,7 @@ ask_confirmation() {
 }
 
 cd "${SCRIPT_DIR}"
+. ./.env
 if [ ! -e "docker-compose.yml" ]; then
   echo "Error: I cannot find the docker-compose.yml file"
   echo "I cannot uninstall start-local."
@@ -36,24 +37,24 @@ echo "All data will be deleted and cannot be recovered."
 if ask_confirmation; then
   docker compose rm -fsv
   docker compose down -v
-  rm docker-compose.yml .env uninstall.sh start.sh stop.sh config/telemetry.yml
+  rm -f docker-compose.yml .env uninstall.sh start.sh stop.sh config/telemetry.yml
   if [ -z "$(ls -A config)" ]; then
     rm -d config
   fi
   echo
   echo "Do you want to remove the following Docker images?"
-  echo "- docker.elastic.co/elasticsearch/elasticsearch:9.2.4"
-  echo "- docker.elastic.co/kibana/kibana:9.2.4"
+  echo "- docker.elastic.co/elasticsearch/elasticsearch:${ES_LOCAL_VERSION}"
+  echo "- docker.elastic.co/kibana/kibana:${ES_LOCAL_VERSION}"
   if ask_confirmation; then
-    if docker rmi "docker.elastic.co/elasticsearch/elasticsearch:9.2.4" >/dev/null 2>&1; then
-      echo "Image docker.elastic.co/elasticsearch/elasticsearch:9.2.4 removed successfully"
+    if docker rmi "docker.elastic.co/elasticsearch/elasticsearch:${ES_LOCAL_VERSION}" >/dev/null 2>&1; then
+      echo "Image docker.elastic.co/elasticsearch/elasticsearch:${ES_LOCAL_VERSION} removed successfully"
     else
-      echo "Failed to remove image docker.elastic.co/elasticsearch/elasticsearch:9.2.4. It might be in use."
+      echo "Failed to remove image docker.elastic.co/elasticsearch/elasticsearch:${ES_LOCAL_VERSION}. It might be in use."
     fi
-    if docker rmi docker.elastic.co/kibana/kibana:9.2.4 >/dev/null 2>&1; then
-      echo "Image docker.elastic.co/kibana/kibana:9.2.4 removed successfully"
+    if docker rmi "docker.elastic.co/kibana/kibana:${ES_LOCAL_VERSION}" >/dev/null 2>&1; then
+      echo "Image docker.elastic.co/kibana/kibana:${ES_LOCAL_VERSION} removed successfully"
     else
-      echo "Failed to remove image docker.elastic.co/kibana/kibana:9.2.4. It might be in use."
+      echo "Failed to remove image docker.elastic.co/kibana/kibana:${ES_LOCAL_VERSION}. It might be in use."
     fi
   fi
   echo "Start-local successfully removed"
