@@ -45,24 +45,39 @@ until curl ${CA_ARG} -s -u "elastic:${ELASTIC_PASSWORD}" "${ES_HOST}/_cluster/he
 done
 echo ""
 
-# 2) Service token para Fleet Server (rota si ya existe)
-echo "Generando service token para Fleet Server..."
-# shellcheck disable=SC2086
-curl ${CA_ARG} -s -u "elastic:${ELASTIC_PASSWORD}" -X DELETE \
-  "${ES_HOST}/_security/service/elastic/fleet-server/credential/token/fleet-token" >/dev/null 2>&1 || true
-# shellcheck disable=SC2086
-TOKEN_JSON=$(curl ${CA_ARG} -s -u "elastic:${ELASTIC_PASSWORD}" -X POST \
-  "${ES_HOST}/_security/service/elastic/fleet-server/credential/token/fleet-token")
-if command -v jq >/dev/null 2>&1; then
-  SERVICE_TOKEN=$(printf '%s' "${TOKEN_JSON}" | jq -r '.token.value')
+# 2) Service token para Fleet Server (idempotente: solo rota si falta o es inválido)
+# Reutilizar el token existente evita romper el estado persistido de fleet-server.
+EXISTING_TOKEN="${FLEET_SERVER_SERVICE_TOKEN:-}"
+TOKEN_OK=0
+if [ -n "${EXISTING_TOKEN}" ]; then
+  # shellcheck disable=SC2086
+  CODE=$(curl ${CA_ARG} -s -o /dev/null -w '%{http_code}' \
+    -H "Authorization: Bearer ${EXISTING_TOKEN}" "${ES_HOST}/" 2>/dev/null || echo 000)
+  [ "${CODE}" = "200" ] && TOKEN_OK=1
+fi
+if [ "${TOKEN_OK}" = "1" ]; then
+  echo -e "${GREEN}   ✓ Service token existente válido; se reutiliza (sin rotar)${NC}"
 else
-  SERVICE_TOKEN=$(printf '%s' "${TOKEN_JSON}" | grep -o '"value"[^,}]*' | sed 's/.*:"\([^"]*\)".*/\1/')
+  echo "Generando service token para Fleet Server..."
+  # shellcheck disable=SC2086
+  curl ${CA_ARG} -s -u "elastic:${ELASTIC_PASSWORD}" -X DELETE \
+    "${ES_HOST}/_security/service/elastic/fleet-server/credential/token/fleet-token" >/dev/null 2>&1 || true
+  # shellcheck disable=SC2086
+  TOKEN_JSON=$(curl ${CA_ARG} -s -u "elastic:${ELASTIC_PASSWORD}" -X POST \
+    "${ES_HOST}/_security/service/elastic/fleet-server/credential/token/fleet-token")
+  if command -v jq >/dev/null 2>&1; then
+    SERVICE_TOKEN=$(printf '%s' "${TOKEN_JSON}" | jq -r '.token.value')
+  else
+    SERVICE_TOKEN=$(printf '%s' "${TOKEN_JSON}" | grep -o '"value"[^,}]*' | sed 's/.*:"\([^"]*\)".*/\1/')
+  fi
+  if [ -z "${SERVICE_TOKEN}" ] || [ "${SERVICE_TOKEN}" = "null" ]; then
+    echo -e "${RED}✗ No se pudo generar el service token.${NC}"; echo "${TOKEN_JSON}"; exit 1
+  fi
+  set_env "FLEET_SERVER_SERVICE_TOKEN" "${SERVICE_TOKEN}"
+  echo -e "${GREEN}   ✓ Service token nuevo guardado en .env${NC}"
+  echo -e "${YELLOW}   ⚠ Token rotado: si fleet-server ya existía, recréalo limpio:${NC}"
+  echo "     docker compose rm -fsv fleet-server elastic-agent && docker volume rm myelk_fleet-server-data myelk_elastic-agent-data"
 fi
-if [ -z "${SERVICE_TOKEN}" ] || [ "${SERVICE_TOKEN}" = "null" ]; then
-  echo -e "${RED}✗ No se pudo generar el service token.${NC}"; echo "${TOKEN_JSON}"; exit 1
-fi
-set_env "FLEET_SERVER_SERVICE_TOKEN" "${SERVICE_TOKEN}"
-echo -e "${GREEN}   ✓ Service token guardado en .env${NC}"
 
 # 3) Fingerprint de la CA (solo modo seguro)
 if [ "${SCHEME}" = "https" ]; then
